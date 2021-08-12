@@ -1,0 +1,222 @@
+---
+title: "Prepare Migrate Input"
+author: "Mary Fisher"
+email: mfisher5@uw.edu
+date: "8/12/2021- Last Run `r Sys.Date()`"
+output:
+  html_document:
+    df_print: kable
+    fig_caption: yes
+    theme: flatly
+  header-includes:
+  - \usepackage{inputenc}
+  - \usepackage{unicode-math}
+  - \pagenumbering{gobble}
+---
+
+# Description 
+
+Prepare locus and sequencing information from Stacks files for the Migrate input files. 
+
+Migrate estimates effective population sizes and past migration rates between 'n' populations, and requires (1) loci with no or little missing data, and (2) the rad-tags, or sequences, for each locus and individual. To get this information, this script pulls from the final genepop file output from Stacks as well as the `sstacks` output file "XXX.matches.tsv" and the `ustacks` output file "XXX.tags.tsv"
+
+
+Additional Resources: 
+* [About Migrate](https://peterbeerli.com/migrate-html5/about.html)
+* [Stacks Manual](https://catchenlab.life.illinois.edu/stacks/manual/#ufiles)
+
+<br>
+<br>
+
+```{r "setup", include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require("here")) {install.packages("here")}
+if(!require("tidyverse")) {install.packages("tidyverse")}
+if(!require("janitor")) {install.packages("janitor")}
+if(!require("janitor")) {install.packages("janitor")}
+## start time for full script
+script_start_time <- Sys.time()
+# ggplot theme
+plot_theme <-   theme_minimal()+
+  theme(text=element_text(family="sans",size=12,color="black"),
+        legend.text = element_text(size=14),
+        axis.title=element_text(family="sans",size=14,color="black"),
+        axis.text=element_text(family="sans",size=8,color="black"),
+        panel.grid.major = element_line(color="gray50",linetype=3))
+theme_set(plot_theme)
+```
+
+<br>
+
+# Part 1: Identify RAD loci for Migrate
+
+## 1.1 Missing Data
+
+Since Migrate was built for microsats, it doesn't handle missing data well. So the first step is to determine how many - if any - of the RAD loci have zero missing data across 100% - 95% of individuals. 
+
+Read in the genotypes, from the .csv file in the data folder.
+```{r}
+genos <- read.csv(here::here("data", "genepop", "korea-pcod-final-filtered-migrants-removed-genotypes.csv")) %>%
+  clean_names()
+# View(genos)
+```
+<br>
+
+Each row represents all of the genotypes for a particular individual, with each column a RAD locus. From here, count the number of 0s in each column to determine the number of individuals missing data for that locus. 
+
+```{r}
+n_missing <- apply(genos[,-1],MARGIN=2,FUN=function(x){return(length(which(x==0)))})
+missing_genos <- as.data.frame(n_missing)
+```
+```{r echo=FALSE}
+ggplot(missing_genos, aes(x=n_missing)) + 
+  geom_histogram() + 
+  xlab("# Individuals Missing Genotypes") + ylab("# Loci")
+```
+<br>
+
+The following RAD loci have no missing genotypes:
+
+```{r}
+keep_loci <- rownames(dplyr::filter(missing_genos, n_missing==0))
+keep_loci
+```
+<br>
+
+Which is a total of `r length(keep_loci)` RAD loci. Save out the genotypes for these loci to a separate file.
+```{r}
+loci_out <- sapply(keep_loci, substring, 2)
+write.csv(loci_out, here::here("data","migrate","RADloci_no_missing_data.csv"),row.names=FALSE)
+```
+<br>
+
+I'd like a larger pool of loci to pull from over multiple iterations, though.
+
+
+## 1.2. Remove Individuals
+
+#### Individuals with many missing genotypes
+
+It may be possible to increase the number of loci without missing data by removing some "problem" individuals. Of the loci missing 1-2 genotypes, are there any individuals in common?
+
+First, get the loci missing 1-2 genotypes.
+
+```{r}
+mg1 <- rownames(dplyr::filter(missing_genos, n_missing %in% c(1,2)))
+mg1_genos <- dplyr::select(genos, c("sample_id", mg1))
+length(mg1)
+```
+<br>
+
+```{r}
+mg1_individs <- as.data.frame(colSums(mg1_genos[,-1]==0)); colnames(mg1_individs) <- c("n_loci_missing")
+```
+```{r echo=FALSE}
+ggplot(mg1_individs, aes(x=n_loci_missing)) +
+  geom_histogram()
+```
+<br>
+
+The individuals with over 50 / 1287 loci missing are:
+```{r echo=FALSE}
+dplyr::filter(mg1_individs, n_loci_missing > 50)
+```
+
+Unfortunately Jukbyeon is heavily represented, and it's the only population from the eastern coast. The individuals with over 75 / 1287 loci missing are:
+```{r echo=FALSE}
+dplyr::filter(mg1_individs, n_loci_missing > 75)
+```
+
+If I remove those individuals, does that change the number of loci with no missing data?
+```{r}
+genos2 <- genos %>%
+  filter(!(sample_id %in% rownames(dplyr::filter(mg1_individs, n_loci_missing > 75))))
+
+n_missing2 <- apply(genos2[,-1],MARGIN=2,FUN=function(x){return(length(which(x==0)))})
+missing_genos2 <- as.data.frame(n_missing2)
+
+keep_loci2 <- rownames(dplyr::filter(missing_genos2, n_missing==0))
+length(keep_loci2)
+```
+
+No, I still have `r length(keep_loci)` loci with no missing data.
+
+Ok, backing up to individuals with lots of missing data in the original data set, instead of just within the pool of loci with 1-2 missing genotypes. 
+
+```{r}
+mg2_individs <- as.data.frame(rowSums(genos[,-1]==0)); colnames(mg2_individs) <- c("n_loci_missing"); rownames(mg2_individs) <- genos[,1]
+ggplot(mg2_individs, aes(x=n_loci_missing)) +
+  geom_histogram()
+```
+<br>
+
+The individuals with over 1000 loci missing are:
+```{r echo=FALSE}
+rownames(dplyr::filter(mg2_individs, n_loci_missing > 1000))
+```
+<br>
+
+Get rid of the individuals with over 1000 loci missing. Does this change the number of loci with no missing data?
+
+```{r}
+genos3 <- genos %>%
+  filter(!(sample_id %in% rownames(dplyr::filter(mg2_individs, n_loci_missing > 1000))))
+
+n_missing3 <- apply(genos3[,-1],MARGIN=2,FUN=function(x){return(length(which(x==0)))})
+missing_genos3 <- as.data.frame(n_missing3)
+
+keep_loci3 <- rownames(dplyr::filter(missing_genos3, n_missing==0))
+length(keep_loci3)
+```
+<br>
+
+Agh still getting only 276 loci!
+
+
+#### Individuals with missing genotypes in common
+
+Instead of targeting individuals with high overall missing data, target individuals which have missing data at the same loci. To identify these individuals, I'm going to create a heatmap that shows the number of loci at which individuals have "shared zeros."
+
+The function that does this:
+```{r}
+shared_zeros <- function(x,y){
+  # input x / y: single-row data frames with each column a locus, and values the genotypes
+  # get the loci at which individual x has zeros
+  x_zeros <- colnames(x)[which(x==0)]
+  # get the loci at which individual y has zeros
+  y_zeros <- colnames(y)[which(y==0)]
+  # find intersection, score similarity 
+  sim <- sum(x_zeros %in% y_zeros)
+  return(sim)
+}
+```
+<br>
+
+Fill in the matrix. **this is super inefficient, working on better fx than a for loop.**
+```{r eval=FALSE}
+A <- matrix(data=0,nrow=dim(mg1_genos)[1], ncol=dim(mg1_genos)[1])
+for(i in seq(1,dim(mg1_genos)[1])){
+  for(j in seq(1,dim(mg1_genos)[1])){
+    sim <- shared_zeros(x=mg1_genos[i,], y=mg1_genos[j,])
+    A[i,j] <- sim
+  }
+}
+```
+
+```{r}
+heatmap(A)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
