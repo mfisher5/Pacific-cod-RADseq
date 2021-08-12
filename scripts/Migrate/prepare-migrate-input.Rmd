@@ -8,6 +8,7 @@ output:
     df_print: kable
     fig_caption: yes
     theme: flatly
+    toc: yes
   header-includes:
   - \usepackage{inputenc}
   - \usepackage{unicode-math}
@@ -34,6 +35,7 @@ if(!require("here")) {install.packages("here")}
 if(!require("tidyverse")) {install.packages("tidyverse")}
 if(!require("janitor")) {install.packages("janitor")}
 if(!require("janitor")) {install.packages("janitor")}
+if(!require("adegenet")) {install.packages("adegenet")}
 ## start time for full script
 script_start_time <- Sys.time()
 # ggplot theme
@@ -83,19 +85,31 @@ keep_loci
 ```
 <br>
 
-Which is a total of `r length(keep_loci)` RAD loci. Save out the genotypes for these loci to a separate file.
-```{r}
+Which is a total of `r length(keep_loci)` RAD loci. Save the list of loci to a file...
+```{r  eval=FALSE}
 loci_out <- sapply(keep_loci, substring, 2)
 write.csv(loci_out, here::here("data","migrate","RADloci_no_missing_data.csv"),row.names=FALSE)
 ```
 <br>
+
+... and the genotypes. 
+```{r eval=FALSE}
+genepop <- read.genepop(here::here("data","genepop","korea-pcod-final-filtered-migrants-removed.gen"))
+```
+```{r eval=FALSE}
+genepop_sub <- genepop[,loc=all_of(loci_out)]
+write.csv(genepop_sub, here::here("data","migrate","genotypes_no_missing_data.gen"))
+```
+<br>
+
+
 
 I'd like a larger pool of loci to pull from over multiple iterations, though.
 
 
 ## 1.2. Remove Individuals
 
-#### Individuals with many missing genotypes
+#### **Individuals with many missing genotypes**
 
 It may be possible to increase the number of loci without missing data by removing some "problem" individuals. Of the loci missing 1-2 genotypes, are there any individuals in common?
 
@@ -103,17 +117,20 @@ First, get the loci missing 1-2 genotypes.
 
 ```{r}
 mg1 <- rownames(dplyr::filter(missing_genos, n_missing %in% c(1,2)))
-mg1_genos <- dplyr::select(genos, c("sample_id", mg1))
+mg1_genos <- dplyr::select(genos, c("sample_id", all_of(mg1)))
 length(mg1)
 ```
 <br>
 
+Are there any individuals missing a bunch of those 1287 RAD loci?
 ```{r}
-mg1_individs <- as.data.frame(colSums(mg1_genos[,-1]==0)); colnames(mg1_individs) <- c("n_loci_missing")
+mg1_individs <- as.data.frame(rowSums(mg1_genos[,-1]==0)) 
+colnames(mg1_individs) <- c("n_loci_missing"); rownames(mg1_individs) <- mg1_genos[,1]
 ```
 ```{r echo=FALSE}
 ggplot(mg1_individs, aes(x=n_loci_missing)) +
-  geom_histogram()
+  geom_histogram() +
+  xlab("# Loci Missing") + ylab("# Individuals")
 ```
 <br>
 
@@ -172,8 +189,11 @@ length(keep_loci3)
 
 Agh still getting only 276 loci!
 
+<br>
+<br>
 
-#### Individuals with missing genotypes in common
+
+#### **Individuals with missing genotypes in common**
 
 Instead of targeting individuals with high overall missing data, target individuals which have missing data at the same loci. To identify these individuals, I'm going to create a heatmap that shows the number of loci at which individuals have "shared zeros."
 
@@ -202,11 +222,6 @@ for(i in seq(1,dim(mg1_genos)[1])){
   }
 }
 ```
-
-```{r}
-heatmap(A)
-```
-
 
 
 
