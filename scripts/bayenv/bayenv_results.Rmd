@@ -1,0 +1,510 @@
+---
+title: "Bayenv Gene x Environment"
+author: "M Fisher"
+date: "7/7/2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description 
+
+Analyze the results from Bayenv to explore gene x environment associations in the Korea P.cod RAD data.
+
+In summary, there were 88 unique RAD loci that displayed 'decisive' evidence of an association with temperature-related environmental variables, including: maximum and mean sea surface temperature, mean and minimum temperature at maximum depth. I also included salinity by default, although I don't think that this variable should be discussed in the manuscript. 
+
+Of these 88 loci, 12 (out of 12) were identified by both Bayescan and OutFLANK as candidate outlier loci. This includes the two loci that previously aligned within protein-coding regions of the Atlantic cod genome which are related to reproductive / early life stage development. 
+
+For more summary information on the *Bayenv* results, including graphs and tables, skip down to the **Results** section. To understand the environmental variables and their values across sampling sites, look through the **Environmental Layers** section. Raw Bayes Factor values from *Bayenv* are explored in the **Bayenv Output** tab.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(here)
+library(tidyverse); library(janitor)
+library(raster)
+library(grid); library(gridExtra)
+library(adegenet); library(poppr)
+library(comprehenr) #list comprehension in r1
+library(viridis)
+library(ggtern) # for triangle plot
+```
+
+
+The script will use the function below to look at the spread of allele frequencies for a given locus, and decide whether a single population stands out as having a unique allele frequency, or whether the allele frequencies across the three populations are on a gradient. The comments describe the decision process for categorizing each locus.
+```{r echo=TRUE}
+def_locus <- function(west_freq, south_freq, east_freq, limit){
+  freqdat <- data.frame(west=west_freq,
+                        south=south_freq,
+                        east=east_freq) %>% mutate(we = abs(west-east),ws=abs(west-south),se=abs(south-east)) %>%
+    # if the difference between south-west and south-east are greater than the difference between west-east, and 
+    #   west-east difference is > limit, south is the odd one out; if west-east difference is < limit, gradient
+    # if the difference between east-west and south-west are greater than the difference between south-east, and 
+    #  south-east difference is > limit, west is the odd one out; if west-east difference i < limit, gradient
+    mutate(def = ifelse(se > we & ws > we & we < limit, 'south',
+                        ifelse(ws > se & we > se & se < limit, 'west','gradient')))
+  return(freqdat$def)
+}
+```
+<br>
+
+
+# Environmental Layers
+
+Environmental data is pulled from the [Bio-Oracle database](http://www.bio-oracle.org/). Ideally, we could use historical mean water temperature at spawning depth during the month of peak spawning, but this is not available from Bio-Oracle. Instead, sort through the temperature variables and pick out the ones that best highlight the thermal gradient created by the Tsushima Current through the Korea Strait. 
+
+The variables from Bio-Oracle are:
+```{r}
+env.layers <- stack(here::here('input','bio_oracle_tempvars.tif'))
+env.data <- read.delim(here::here('input','mary_sites_env_data.tsv'), sep=" ")
+names(env.layers) <- colnames(env.data)[-1]; colnames(env.data)[-1]
+```
+<br>
+
+## Sea Surface Temperature
+
+```{r}
+tmp.layers <- raster::subset(env.layers, names(env.layers)[which(grepl('sst',names(env.layers)))], drop=FALSE)
+n <- length(names(tmp.layers))
+par(mfrow=c(2,2))
+for(i in seq(1,n)){raster::image(tmp.layers, y=i,xlim=c(110,150),ylim=c(25,55))}
+```
+<br>
+
+For the sampling sites:
+```{r fig.height=4, fig.width=7}
+plotdat <- env.data %>% 
+         dplyr::select(contains('sst'), 'Name') %>%
+         pivot_longer(cols=contains('sst'))
+plotdat$Name <- factor(plotdat$Name, levels=c('Block161', 'Boryeong', 'Geoje', 'JinhaeBay','Namhae', 'Pohang', 'Jukbyeon'))
+ggplot(data=plotdat, aes(x=Name, y=value)) +
+  geom_point(aes(col=value), size=3) + 
+  facet_wrap(~name) +
+  scale_color_continuous(type = "viridis", name='Temp (F)') +
+  theme_bw() +
+  xlab('Site') +
+  theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+        panel.grid.major.y=element_blank(), panel.grid.minor.y=element_blank())
+```
+<br>
+
+It's interesting that temperature at Jukbyeon is not terribly different from Pohang - I'll retain maximum and mean sea surface temperature (`Var.BO_sstmax` and `Var.BO_sstmean`). 
+```{r}
+keep_vars <- c('BO_sstmax', 'BO_sstmean')
+```
+<br>
+
+## at Depth
+
+Temperature at Mean Depth
+```{r eval=FALSE}
+tmp.layers <- raster::subset(env.layers, names(env.layers)[which(grepl('bdmean',names(env.layers)))], drop=FALSE)
+n <- length(names(tmp.layers))
+par(mfrow=c(2,2))
+for(i in seq(1,n)){raster::image(tmp.layers, y=i,xlim=c(110,150),ylim=c(25,55))}
+```
+<br>
+
+For the sampling sites:
+```{r fig.height=4, fig.width=7}
+plotdat <- env.data %>% 
+         dplyr::select(contains('bdmean'), 'Name') %>%
+         pivot_longer(cols=contains('bdmean'))
+plotdat$Name <- factor(plotdat$Name, levels=c('Block161', 'Boryeong', 'Geoje', 'JinhaeBay','Namhae', 'Pohang', 'Jukbyeon'))
+ggplot(data=plotdat, aes(x=Name, y=value)) +
+  geom_point(aes(col=value), size=3) + 
+  facet_wrap(~name) +
+  scale_color_continuous(type = "viridis", name='Temp (F)') +
+  xlab('Site') +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+        panel.grid.major.y=element_blank(), panel.grid.minor.y=element_blank())
+```
+
+
+Temperature at Maximum Depth
+```{r eval=FALSE}
+tmp.layers <- raster::subset(env.layers, names(env.layers)[which(grepl('bdmax',names(env.layers)))], drop=FALSE)
+n <- length(names(tmp.layers))
+par(mfrow=c(2,2))
+for(i in seq(1,n)){raster::image(tmp.layers, y=i,xlim=c(110,150),ylim=c(25,55))}
+```
+<br>
+
+For the sampling sites:
+```{r fig.height=4, fig.width=7}
+plotdat <- env.data %>% 
+         dplyr::select(contains('bdmax'), 'Name') %>%
+         pivot_longer(cols=contains('bdmax'))
+plotdat$Name <- factor(plotdat$Name, levels=c('Block161', 'Boryeong', 'Geoje', 'JinhaeBay','Namhae', 'Pohang', 'Jukbyeon'))
+ggplot(data=plotdat, aes(x=Name, y=value)) +
+  geom_point(aes(col=value), size=3) + 
+  facet_wrap(~name) +
+  scale_color_continuous(type = "viridis", name='Temp (F)') +
+  xlab('Site') +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+        panel.grid.major.y=element_blank(), panel.grid.minor.y=element_blank())
+```
+<br>
+
+
+It looks like the site-specific differences in temperature at Max / Mean Depth are not terribly different. I'll use maximum depth (since cod have benthic eggs). Mean and minimum temperatures appear to separate the Western from South / Eastern sites, although none of the variables separate the East Sea site at Jukbyeon from the southern coast sites. 
+
+```{r}
+keep_vars <- c(keep_vars, 'BO2_tempmean_bdmax', 'BO2_tempmin_bdmax')
+```
+<br>
+
+## Salinity
+
+```{r eval=FALSE}
+tmp.layers <- raster::subset(env.layers, names(env.layers)[which(grepl('salinity',names(env.layers)))], drop=FALSE)
+n <- length(names(tmp.layers))
+par(mfrow=c(2,2))
+for(i in seq(1,n)){raster::image(tmp.layers, y=i,xlim=c(100,150),ylim=c(25,55))}
+```
+<br>
+
+For the sampling sites:
+```{r fig.height=3, fig.width=4}
+plotdat <- env.data %>% 
+         dplyr::select(contains('salinity'), 'Name') %>%
+         pivot_longer(cols=contains('salinity'))
+plotdat$Name <- factor(plotdat$Name, levels=c('Block161', 'Boryeong', 'Geoje', 'JinhaeBay','Namhae', 'Pohang', 'Jukbyeon'))
+ggplot(data=plotdat, aes(x=Name, y=value)) +
+  geom_point(aes(col=value), size=3) + 
+  facet_wrap(~name) +
+  scale_color_continuous(type = "viridis", name='') +
+  theme_bw() +
+  xlab('Site') +
+  theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+        panel.grid.major.y=element_blank(), panel.grid.minor.y=element_blank())
+```
+<br>
+
+It makes sense that Block 161 is an outlier here, since it is much farther from shore than the other sites. I'll check out the *Bayenv* output for salinity, but probably won't use it in the paper. 
+
+```{r}
+keep_vars <- c(keep_vars, 'BO_salinity')
+```
+<br>
+
+## Retained Variables
+```{r}
+```
+<br>
+
+
+# Bayenv Output
+
+## Bayes Factors
+
+Natalie took the raw *Bayenv* output matrix, renamed the loci for me, and re-arranged the data frame so that it was super easy to work with!
+```{r}
+bdat <- read.delim(here::here('output','Mary_BE2_results.txt'), sep=' ') %>%
+  dplyr::select(-X)
+str(bdat)
+```
+<br>
+
+The values associated with each locus x environmental layer are the Bayes factors. From Eleni's notebook:
+
+> The Bayes factor is a summary of the evidence provided by the data in favor of one scientific theory, represented by a statistical model, as opposed to another. According to Kass and Rafferty 1995 ("Bayes Factors",  Journal of the American Statistical Association, Vol. 90, No. 430 (Jun., 1995), pp. 773-795) Posterior odds = Bayes factor X Prior odds. So the Bayes factor is the ratio of the posterior odds of H1 to its prior odds, regardless of the value of the prior odds. 
+
+A higher Bayes factor suggests a stronger departure from $H_0$, the null hypothesis. Since the null hypothesis here is that there is no association between allele frequency and the environmental conditions, a higher Bayes factor suggests a stronger likelihood that there *is* an association between allele frequency and the environmental conditions (I'm using *likelihood* in the general sense, not pertaining the actual statistical likelihood).
+<br>
+
+
+How are the Bayes factors distributed for each variable of interest? Note that any locus with a Bayes factor above 100 will be plotted at the far right of the graph.
+```{r fig.height=4, fig.width=7}
+bdat <- dplyr::select(bdat, 'LocusName',all_of(keep_vars))
+ggplot(data=pivot_longer(bdat, cols=contains('BO')), aes(x=value)) +
+  geom_histogram(fill='deepskyblue',breaks=c(seq(0, 100, by=2),max(bdat[,-c(1)]))) +
+  facet_wrap(~name) +
+  coord_cartesian(xlim=c(0,100)) +
+  xlab('Bayes Factor') + ylab('No. Loci') +
+  theme_bw()
+```
+<br>
+
+Cool! It looks like there are some loci with super high Bayes Factors associated with the mean / min temperature at max depth, and the mean SST. 
+```{r}
+pivot_longer(bdat, cols=contains('BO'), names_to='variable', values_to='bayes_factor') %>%
+  group_by(variable) %>%
+  summarise(max_bayes_factor=max(bayes_factor,na.rm=TRUE))
+```
+<br>
+
+
+## Log(BF)
+
+From Eleni's notebook: 
+
+> Jeffreys (1961, app. B) suggested interpreting the Bayes factor in half-units on the log (base 10) scale. 
+
+| $log_{10}(B_{10})$ |  $B_{10}$  | Evidence against $H_0$ |
+|:------------------:|:----------:|:-----------------------|
+| 0 to 1/2           | 1 to 3.2   | Negligable             |
+|1/2 to 1            | 3.2 to 10  | Substantial            |
+|1 to 2              | 10 to 100  | Strong                 |
+| >2                 | > 100      | Decisive               |
+
+
+So I'm going to take the $log_{10}$ of the Bayes factors, and then look at locus x environment associations that fall within the *Strong* (10-100) and the *Decisive* (>100) categories. From here out, I'll focus only on the temperature variables
+
+```{r fig.height=4, fig.width=5}
+bdat.log <- pivot_longer(bdat, cols=contains('BO'), names_to='variable', values_to='bayes_factor') %>%
+  mutate(log_bf = log(bayes_factor,base=10)) %>%
+  dplyr::select(-bayes_factor) %>%
+  filter(variable != 'BO_salinity')
+
+bdat.high <- bdat.log %>%
+  filter(log_bf > 1) %>%
+  mutate(evidence=ifelse(log_bf < 2, 'Strong', 'Decisive')) %>%
+  mutate(variable=recode(variable, BO2_tempmin_bdmax='MinTemp_MaxDepth', BO2_tempmean_bdmax='MeanTemp_MaxDepth',
+                          BO_sstmean='Mean_SST', BO_sstmax='Max_SST', BO_salinity='Salinity'))
+
+ggplot(data=bdat.high, aes(x=variable, fill=evidence)) +
+  geom_bar() +
+  geom_hline(yintercept=0) +
+  scale_fill_manual(values=c('tomato3','tan1')) +
+  xlab('Environmental Variable') + ylab('No. Loci') +
+  theme_bw() + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+                     axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+```{r}
+message(length(unique(bdat.high$LocusName)), ' unique loci with strong or decisive evidence of temperature association.')
+bdat.high %>% filter(evidence=='Decisive' | evidence=='Strong') %>%
+  group_by(variable) %>%
+  summarise(n_loci=length(unique(LocusName)))
+```
+
+<br>
+
+How many unique loci showed 'decisive' evidence of an association?
+
+```{r}
+length(unique(filter(bdat.high,evidence=='Decisive')$LocusName))
+bdat.high %>% filter(evidence=='Decisive') %>%
+  group_by(variable) %>%
+  summarise(n_loci=length(unique(LocusName)))
+```
+<br>
+
+Save the names of loci for which there is decisive evidence of an association between any of the temperature variables and the allele frequencies. 
+
+```{r echo=TRUE}
+bdat.out <- filter(bdat.high, evidence=='Decisive')
+write.csv(bdat.out,here::here('results','bayenv_logBF_2plus_temp.csv'), row.names=FALSE)
+```
+<br>
+
+
+# Results
+
+Do the loci with decisive associations with the environmental variables show up as outliers? What are the allele frequencies associated with these loci in the West-South-East populations?
+
+## All Allele Frequencies
+
+I calculated allele frequencies for each locus with a 'decisive' association with an environmental variable using `adegenet` and `poppr` (R code output below). This includes 88 loci. 
+```{r}
+# Genepop file (no migrant individuals)
+alldat <-read.genepop("C:/Users/mcf05/Documents/Pacific cod/Analysis/stacks/stacks_b8_verif/batch_8_filteredMAF_filteredIndivids30_filteredLoci_filteredHWE_filteredCR_byreg_nomigrants10.gen")
+# Select bayenv outliers
+keep_loci <- to_vec(for(i in unique(bdat.high$LocusName)) as.character(i))
+outlierdat <- alldat[,loc=keep_loci]
+
+# calculate population allele frequencies with poppr
+al.freq = data.frame(rraf(outlierdat, by_pop=TRUE, correction = FALSE))
+
+# fix up the output data frame
+a1freq <- al.freq %>%
+  dplyr::select(contains('.01')) %>%
+  mutate(PopulationID=rownames(al.freq), Population=ifelse(grepl('GE',PopulationID ), "South",ifelse(grepl('BOR',PopulationID),"West","East"))) %>%
+  pivot_longer(contains('.01'), names_to='locus',values_to='A1_Freq') %>%
+  dplyr::select(-PopulationID) %>%
+  pivot_wider(names_from="Population",values_from="A1_Freq") %>%
+  separate(locus, into=c("locus_id","allele"),sep="\\.",remove=TRUE) %>%
+  mutate(locus_id=str_remove(locus_id,"X")) %>% dplyr::select(-allele)
+
+# join with bayes factors
+a1freq$locus_id <- as.numeric(a1freq$locus_id)
+bdat.freqs <- left_join(bdat.high ,a1freq,by=c('LocusName'='locus_id')) %>%
+  filter(evidence=='Decisive') %>% dplyr::select(-evidence)
+head(bdat.freqs)
+```
+<br>
+
+
+**Figure** Compare allele frequencies between the Southern (x axis), Western (y axis), and Eastern (point color) populations for all loci with 'decisive' environmental associations. 
+```{r}
+bdat.expand <- bdat.freqs %>%
+  mutate(locus_type = def_locus(west_freq = West, east_freq = East, south_freq = South,limit=0.14))
+
+ggplot(data=bdat.expand, aes(x=South,y=West, col=East)) +
+  geom_point() + 
+  theme_bw() +
+  facet_wrap(~variable) +
+  ggtitle('Allele Frequencies') +
+  scale_color_viridis(discrete=FALSE, option='magma', direction=-1)
+```
+<br>
+
+**Figure** Use a tern plot to compare allele frequencies between Eastern, Western, and Southern populations for loci identified as highly correlated with each respective environmental variable.
+```{r}
+## polygons to mark 'unique' population
+west.df <- data.frame(West = c(0.5,0.5,1.0), 
+                      South =c(0.0,0.5,0.0), 
+                      East = c(0.5,0.0,0.0))
+east.df <- data.frame(West = c(0.5,0.0,0.0), 
+                      South =c(0.0,0.5,0.0), 
+                      East = c(0.5,0.5,1.0))
+south.df <- data.frame(West = c(0.0,0.5,0.0), 
+                      South =c(0.5,0.5,1.0), 
+                      East = c(0.5,0.0,0.0))
+## make the environmental layers nicer
+bdat.expand <- bdat.expand %>%
+  mutate(variable=recode(variable, Mean_SST = "Mean SST",
+                         Max_SST = "Max SST",
+                         MeanTemp_MaxDepth="Mean Temp at Depth",
+                         MinTemp_MaxDepth="Min Temp at Depth"))
+vars_order <- c("Mean SST", "Max SST","Mean Temp at Depth", "Min Temp at Depth","Salinity")
+
+## list of plots (facet wrap is messy with ggtern)
+plots_list=list()
+i=1
+for(v in vars_order) {
+  new_plot <- ggtern(data=filter(bdat.expand, variable==v), aes(x=South,y=West, z=East)) +
+    geom_point(data=filter(bdat.expand, variable==v), aes(size=log_bf), col='black', alpha=0.5,fill='black') + 
+    geom_polygon(data=east.df,alpha=0.2, fill='forestgreen') +
+    geom_polygon(data=south.df,alpha=0.4,fill='deepskyblue4') +
+    geom_polygon(data=west.df,alpha=0.2,fill='firebrick4') +
+    ggtitle(v) +
+    scale_radius(name='Bayes\n Factor', limits=c(0,5.1)) +
+    labs(x = "", xarrow="South",
+       y = "", yarrow="West",
+       z = "", zarrow="East") + 
+    theme_bw() + theme(plot.margin=unit(c(2,1,0,0),"mm"),
+                         plot.title = element_text(hjust = 0.5, size=14),
+                       tern.axis.arrow.text=element_text(size=12)) + theme_showarrows()
+  new_plot
+  plots_list[[i]] <- new_plot
+  i <- i + 1
+}
+ggsave('bayenv_allele1_tern.png', grid.arrange(grobs=plots_list,nrow=3), height = 9,width=7,units='in')
+```
+<br>
+
+```{r}
+# standardize allele frequencies
+bdat.expand <- bdat.expand %>% mutate(total=South+West+East) %>%
+  mutate(South.s = South/total, West.s = West/total, East.s = East/total)
+```
+<br>
+
+### SST
+
+**Figure** Allele frequencies (standardized by total) of each locus for the 3 populations (South, West, East) for all loci with decisive associations with the two Sea Surface Temperature environmental variables (mean and maximum). 
+
+```{r fig.height=7}
+plotdat <- bdat.expand %>% filter(variable=="Max_SST" | variable=="Mean_SST") %>% 
+  pivot_longer(cols=c('South','West','East', 'South.s','West.s','East.s')) %>%
+  filter(name %in% c('South.s','West.s','East.s'))
+plotdat$name <- factor(plotdat$name, levels=c("West.s","East.s","South.s"))
+ggplot(plotdat, aes(y=as.factor(LocusName),x=value, fill=name)) +
+  geom_col() +
+  facet_wrap(~variable, scales='free_y', drop=TRUE) +
+  ylab("Locus ID") +
+  xlab("Allele Frequency (standardized)") +
+  scale_fill_manual(values=c('darkred','forestgreen','deepskyblue3'), name="Populations") +
+  theme_bw() + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
+```
+<br>
+
+### Max Depth Temp
+
+**Figure** Allele frequencies (standardized by total) of each locus for the 3 populations (South, West, East) for all loci with decisive associations with the two Temperature at Maximum Depth environmental variables (mean and minimum). 
+
+```{r fig.height=7}
+plotdat <- bdat.expand %>% filter(variable=="MinTemp_MaxDepth" | variable=="MeanTemp_MaxDepth") %>% 
+  pivot_longer(cols=c('South','West','East', 'South.s','West.s','East.s')) %>%
+  filter(name %in% c('South.s','West.s','East.s'))
+plotdat$name <- factor(plotdat$name, levels=c("West.s","East.s","South.s"))
+ggplot(plotdat, aes(y=as.factor(LocusName),x=value, fill=name)) +
+  geom_col() +
+  facet_wrap(~variable, scales='free_y', drop=TRUE) +
+  ylab("Locus ID") +
+  xlab("Allele Frequency (standardized)") +
+  scale_fill_manual(values=c('darkred','forestgreen','deepskyblue3'), name="Populations") +
+  theme_bw() + theme(panel.grid.major=element_blank(), panel.grid.minor=element_blank())
+```
+
+
+## Outlier Loci
+
+These are the outlier loci which were identified by both Bayescan and OutFlank
+
+```{r}
+outliers <- read.csv(here::here('results', 'outlier_loci_OutflankBayescan.csv')) %>%
+  clean_names() %>%
+  pivot_longer(cols=c('a1_west','a1_south','a1_east'), names_to='Population', values_to='A1_Freq') %>%
+  mutate(Population=recode(Population, a1_west="West", a1_south="South",a1_east="East"))
+unique(outliers$locus_id)
+```
+<br>
+
+**Figure** How do allele frequencies vary between populations, for loci associated with each environmental variable? The locus names are on the x axis, displayed according to whether there was decisive (top) or strong (bottom) evidence of an association between allele frequency and the environmental variables (columns). 
+```{r}
+compdat <- left_join(outliers, bdat.high,by=c('locus_id'='LocusName'))
+compdat$Population <- factor(compdat$Population,levels=c("South","East","West"))
+comp.out <- pivot_wider(compdat, names_from="Population",values_from="A1_Freq")
+```
+```{r fig.height=4, fig.width=9}
+ggplot(data=compdat, aes(y=as.factor(locus_id),x=A1_Freq, col=Population)) +
+  geom_point(size=2) +
+  geom_vline(xintercept=0.5, col='grey88') +
+  facet_grid(cols=vars(variable), rows=vars(evidence), drop=TRUE,scales = "free_y") +
+  scale_color_manual(values=c("firebrick4","deepskyblue","forestgreen")) +
+  xlab('Allele 1 Frequency') + ylab('Locus') +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),
+                     panel.grid.major.y=element_line(colour='grey65'),
+                     panel.grid.major.x=element_blank(),
+                     panel.grid.minor=element_blank())
+```
+<br>
+
+I'm particularly interested in loci where the southern population allele frequency is much different than the eastern and western populations' allele frequencies - in the graph above, this is indicated by the proximity of the red data points to the green (West) and blue (East) data points. 
+
+**Table** Outlier loci identified in both Bayescan and Outlank which had either strong (1-2) or decisive (> 2) associations with environmental variables for which *the allele frequency of the Southern population was distinct from that of the Western / Eastern population*. Allele frequencies are provided for each population (West, South, East columns), as well as the log(Bayes Factor) for each environmental variable association (Mean SST, Minimum Temperature at maximum depth). Note that locus 10203 aligned to a reproduction-associated protein-coding region in the Atlantic cod genome.  
+```{r}
+comp.expand <- comp.out %>%
+  mutate(locus_type = def_locus(west_freq = West, east_freq = East, south_freq = South,limit=0.14))
+
+comp.expand %>%
+  filter(locus_type=="south") %>%
+  dplyr::select(-locus_type,-evidence) %>%
+  pivot_wider(names_from='variable',values_from='log_bf')
+```
+<br>
+
+**Table** Outlier loci identified in both Bayescan and Outlank which had either strong (1-2) or decisive (> 2) associations with environmental variables for which *the allele frequency of the Western population (Yellow Sea) was distinct from that of the Southern / Eastern population*. Allele frequencies are provided for each population (West, South, East columns), as well as the log(Bayes Factor) for each environmental variable association (Mean SST, Minimum Temperature at maximum depth). Note that locus 3699 aligned to a reproduction-associated protein-coding region in the Atlantic cod genome.  
+```{r}
+comp.expand %>%
+  filter(locus_type=="west") %>%
+  dplyr::select(-locus_type,-evidence) %>%
+  pivot_wider(names_from='variable',values_from='log_bf')
+```
+
+
+
+Write out the combined data. 
+```{r echo=TRUE}
+comp.out <- pivot_wider(compdat, names_from="Population",values_from="A1_Freq")
+write.csv(bdat.out,here::here('results','outliers_bayenv_logBF_1plus_A1Freq.csv'), row.names=FALSE)
+```
+<br>
+
+

@@ -1,0 +1,207 @@
+---
+title: "Bio Oracle Environmental Data"
+author: "Natalie Lowell, Mary Fisher"
+date: "Written 12/18/2019. Last Run `r Sys.time()`"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Pull environmental data from [Bio-Oracle database](http://www.bio-oracle.org/) to explore gene x environment associations.
+
+Originally written to extract environmental data for the US West Coast, edited in June 2020 to extract environmental data for the Korean peninsula (Yellow Sea, East Sea, Korea Strait).
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This script requires the following packages
+```{r}
+library(here)
+library(sdmpredictors)
+library(leaflet)
+library(tidyverse)
+library(raster)
+library(grid)
+library(gridExtra)
+```
+<br>
+
+# Download environmental layers 
+
+You can explore the environmental data "layers" using the following code. It should return over 300 different environmental measurements.
+```{r eval=FALSE, echo=TRUE}
+layers.bio2 <- list_layers( datasets="Bio-ORACLE" )
+
+## for all layers
+layers.bio2 %>% 
+  filter(marine==TRUE) %>% 
+  dplyr::select(name, layer_code)
+
+## for temperature only
+layers.bio2 %>% 
+  filter(marine==TRUE & grepl('temperature',name)==TRUE) %>% 
+  dplyr::select(name, layer_code)
+```
+<br>
+
+Download the layer data for the metrics of interest: mean/max/range sea surface temperature, mean/min/max sea temperature at mean depth, mean/min/max sea temperature at min depth
+```{r eval=FALSE, echo=TRUE}
+environmental_vars <- load_layers( layercodes = c("BO_sstmax", # max SST
+                                                  "BO_sstmean", # mean SST
+                                                  "BO_sstrange", # range SST
+                                                  "BO2_tempmax_bdmean", # mean depth
+                                                  "BO2_tempmean_bdmean",
+                                                  "BO2_tempmin_bdmean", 
+                                                  "BO2_templtmax_bdmean", #long-term
+                                                  "BO2_tempmax_bdmax", # max depth
+                                                  "BO2_tempmean_bdmax",
+                                                  "BO2_tempmin_bdmax",
+                                                  "BO2_templtmax_bdmax", #long-term
+                                                  "BO_salinity"), # salinity
+                                   equalarea=FALSE, 
+                                   rasterstack=TRUE)
+```
+<br>
+
+Save this as an R object to avoid downloading again!
+```{r eval=FALSE, echo=TRUE}
+# writeRaster(environmental_vars, filename=here::here('bio_oracle_tempvars.tif'), options="INTERLEAVE=BAND", overwrite=TRUE)
+saveRDS(environmental_vars, here::here('input','bio_oracle_tempvars.rds'))
+```
+<br>
+
+```{r include=FALSE}
+## read back in environmental layers if this isn't the first time running the script
+environmental_vars <- readRDS(here::here('input','bio_oracle_tempvars.rds'))
+```
+<br>
+
+Check out the spatial extent of the bio-oracle data.
+```{r}
+par(mfrow=c(2,2))
+for(i in seq(1,4)){image(environmental_vars, y=i)}
+```
+<br>
+
+Let's zoom into the Korean peninsula.
+```{r}
+par(mfrow=c(2,2))
+for(i in seq(1,4)){image(environmental_vars, y=i,xlim=c(100,150),ylim=c(25,55))}
+```
+<br>
+
+Save a nice image of the mean annual SST around the Korean peninsula
+```{r}
+e <- extent(115,155,25,50)
+plot(environmental_vars[[2]], col=hcl.colors(n=100, palette="viridis"),
+     xlab="", ylab="", ext=e, zlim=c(0,27.5))
+abline(v=seq(115,145,by=5), col="black", lty=3, lwd=1)
+abline(h=seq(30,45,by=5), col="black", lty=3, lwd=1)
+abline(h=c(25,50),col="black",lwd=2)
+abline(v=c(110, 150), col="grey48", lty=3, lwd=1, cex=3)
+
+png('bio-oracle_sst_mean_zoom.png', height=400, width=400)
+plot(environmental_vars[[2]], col=hcl.colors(n=100, palette="viridis"),
+     xlab="", ylab="", ext=e, zlim=c(0,27.5))
+abline(v=seq(115,145,by=5), col="black", lty=3, lwd=1)
+abline(h=seq(25,45,by=5), col="black", lty=3, lwd=1)
+abline(v=c(110, 150), col="grey48", lty=3, lwd=1)
+abline(h=c(25,50),col="black",lwd=1)
+dev.off()
+```
+<br>
+
+
+# Extract site data
+
+These are the site locations for Pacific cod sampling around the Korean peninsula.
+```{r echo=FALSE}
+site_data <- data.frame(Sampling.Site = c("Block 161", "Boryeong", 
+                                          "Namhae", "Geoje", "Jinhae Bay", "Pohang", 
+                                          "Jukbyeon"),
+           latitude= c(37,36.3,34.725,
+                       34.8,35.05,36.1,
+                       37.05),
+           longitude = c(124.6,126.5,
+                         127.836,128.7,128.7,129.5,
+                         129.4))
+site_data
+```
+<br>
+
+Just grab the lat / lon coordinates
+```{r}
+my.sites.locs <- dplyr::select(site_data, latitude, longitude) %>%
+  rename(Lon=longitude, Lat=latitude)
+
+# Visualise sites of interest in google maps, make sure placing where we think we are
+check_map <- leaflet()
+check_map <- addTiles(check_map)
+check_map <- addMarkers(check_map, lng=my.sites.locs$Lon, lat=my.sites.locs$Lat)
+check_map
+```
+<br>
+
+
+Extract environmental values from layers, stick into a dataframe
+```{r}
+my.sites.env.data <- data.frame(Name=site_data$Sampling.Site,
+                                Var=raster::extract(environmental_vars, my.sites.locs))
+
+str(my.sites.env.data)
+```
+
+
+# Average Site Data
+
+```{r include=FALSE}
+my.sites.env.data <- read.delim(here::here('mary_sites_env_data.tsv'), sep=" ")
+```
+<br>
+
+
+`Bayenv` takes a single environmental measurement for each population. The environmental data layers were collected using sampling sites, with multiple sites making up a population. 
+```{r echo=FALSE}
+site_data <- site_data %>% mutate(population = ifelse(Sampling.Site %in% c("Block 161","Boryeong"), "West",
+                                        ifelse(Sampling.Site == "Jukbyeon", "East", "South")),
+                                  Sampling.Site = as.character(Sampling.Site))
+site_data$Sampling.Site[which(site_data$Sampling.Site=="Block 161")] <- "Block161"
+site_data$Sampling.Site[which(site_data$Sampling.Site=="Jinhae Bay")] <- "JinhaeBay"
+site_data
+```
+<br>
+
+Each row of my environmental data layers needs to be a specific environmental variable, and each column contains its value for a given population. 
+```{r}
+env.dat <- my.sites.env.data %>%
+  left_join(dplyr::select(site_data,Sampling.Site,population),by=c('Name'='Sampling.Site')) %>%
+  dplyr::select(-Name) %>%
+  rename(Name=population) %>%
+  dplyr::select(all_of(colnames(my.sites.env.data))) %>%
+  group_by(Name) %>%
+  summarise_all(mean,.groups='drop')
+env.dat[,1:5]
+```
+<br>
+
+Clean up column names, and re-order the populations so that they are in the same order as the genepop file.
+```{r}
+env.dat <- env.dat %>%
+  clean_names() %>%
+  rename(Name=name) %>%
+  arrange(match(Name, c("South", "West", "East")))
+colnames(env.dat)
+```
+<br>
+
+Write out as a tab-delimited text file.
+```{r}
+write_delim(env.dat, 'mary_pops_environmental.txt', delim='\t')
+```
+<br>
