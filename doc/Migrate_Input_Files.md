@@ -23,7 +23,9 @@ ssh mfisher5@klone.hyak.uw.edu    # login with UW net ID
 
 > ECDSA key fingerprint is <>.
 > Are you sure you want to continue connecting (yes/no)? 
+
 yes
+
 > Warning: Permanently added 'klone.hyak.uw.edu' to the list of known hosts.
 > Password:
 
@@ -39,7 +41,6 @@ my-UW-password                     # enter UW net ID password
 > Passcode or option (1-2):
 
 2                                   # opt for phone call 
-
 
 cd /gscratch/merlab/                # go to MERlab's home directory
 ls
@@ -68,8 +69,20 @@ v1.48 is the closest I can get to v1.44, so I right clicked on the download link
 
 `<a href="http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz">stacks-1.48.tar.gz</a>`
 
+Which I can use to install Stacks in my folder on Hyak using the following: 
 
+```
+wget http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
 
+tar xfvz stacks-x.xx.tar.gz
+
+cd stacks-x.xx
+
+./configure
+
+make           # or make install or sudo make install
+
+```
 
 
 
