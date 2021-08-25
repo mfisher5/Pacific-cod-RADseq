@@ -23,9 +23,7 @@ ssh mfisher5@klone.hyak.uw.edu    # login with UW net ID
 
 > ECDSA key fingerprint is <>.
 > Are you sure you want to continue connecting (yes/no)? 
-
 yes
-
 > Warning: Permanently added 'klone.hyak.uw.edu' to the list of known hosts.
 > Password:
 
@@ -41,6 +39,7 @@ my-UW-password                     # enter UW net ID password
 > Passcode or option (1-2):
 
 2                                   # opt for phone call 
+
 
 cd /gscratch/merlab/                # go to MERlab's home directory
 ls
@@ -69,20 +68,26 @@ v1.48 is the closest I can get to v1.44, so I right clicked on the download link
 
 `<a href="http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz">stacks-1.48.tar.gz</a>`
 
-Which I can use to install Stacks in my folder on Hyak using the following: 
 
 ```
-wget http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
+[ctarpey@klone1 mfisher]$ wget http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
+--2021-08-25 15:15:30--  http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
+Resolving catchenlab.life.illinois.edu (catchenlab.life.illinois.edu)... 130.126.48.94
+Connecting to catchenlab.life.illinois.edu (catchenlab.life.illinois.edu)|130.126.48.94|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 895195 (874K) [application/x-gzip]
+Saving to: ‘stacks-1.48.tar.gz’
 
-tar xfvz stacks-x.xx.tar.gz
+stacks-1.48.tar.gz  100%[=================>] 874.21K  3.84MB/s    in 0.2s
 
-cd stacks-x.xx
-
+2021-08-25 15:15:30 (3.84 MB/s) - ‘stacks-1.48.tar.gz’ saved [895195/895195]
+```
+ Unzipping the tar file, moving into the directory, compiling and making the program: 
+```
+tar xzvf stacks-1.48.tar.gz
+cd stacks-1.48 
 ./configure
-
-make           # or make install or sudo make install
-
+make 
 ```
-
 
 
