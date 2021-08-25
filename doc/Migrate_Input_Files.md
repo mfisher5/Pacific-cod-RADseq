@@ -50,8 +50,8 @@ ls
 > stacks_b8_wgenome
 ```
 
-
 Carolyn copied in all of my intermediate Stacks files that I'll need to run populations. 
+
 
 ## 2: Download and Install Stacks
 
@@ -68,26 +68,28 @@ v1.48 is the closest I can get to v1.44, so I right clicked on the download link
 
 `<a href="http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz">stacks-1.48.tar.gz</a>`
 
+Because I cannot edit files in a directory that belongs to a different Hyak user, I created a new root directory for myself (mfisher5). After navigating into that directory, I ran the following code to download and install Stacks v1.48. 
 
 ```
-[ctarpey@klone1 mfisher]$ wget http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
---2021-08-25 15:15:30--  http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
-Resolving catchenlab.life.illinois.edu (catchenlab.life.illinois.edu)... 130.126.48.94
-Connecting to catchenlab.life.illinois.edu (catchenlab.life.illinois.edu)|130.126.48.94|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 895195 (874K) [application/x-gzip]
-Saving to: ‘stacks-1.48.tar.gz’
-
-stacks-1.48.tar.gz  100%[=================>] 874.21K  3.84MB/s    in 0.2s
-
-2021-08-25 15:15:30 (3.84 MB/s) - ‘stacks-1.48.tar.gz’ saved [895195/895195]
-```
- Unzipping the tar file, moving into the directory, compiling and making the program: 
-```
+wget http://catchenlab.life.illinois.edu/stacks/source/stacks-1.48.tar.gz
 tar xzvf stacks-1.48.tar.gz
 cd stacks-1.48 
 ./configure
 make 
 ```
+
+## 3: Re-run `Populations`
+
+The [`populations` log](https://github.com/mfisher5/Pacific-cod-RADseq/blob/main/data/stacks/batch_7.populations.log) from my final run of the program (2017-09-28) recorded the following input code: 
+
+```
+populations -b 7 -P stacks_b8_wgenome -M scripts/PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta
+```
+
+
+
+
+
+
 
 
