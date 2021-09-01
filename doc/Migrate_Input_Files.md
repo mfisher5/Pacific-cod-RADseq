@@ -245,3 +245,20 @@ ctarpey@klone1 data]$ od -c fasta2genotype.py
 0000360   a   t   i   o   n   s       a   n   d       l   i   s   t
 0000400   o   f       v   a   r   i   a   b   l   e       l   o   c   i
 ```
+
+I downloaded all the files from Hyak on to my desktop to see what this python script is and how its working. I have python2 installed on one of my Ubuntu terminals, so I tried the command Mary wrote to run the fasta2genotype.py script. It's an interactive python script that requires inputs that are not on the command line which explains why it was failing on Klone. 
+
+```
+(base) ctarpey@DESKTOP-CG1JP0S:/mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate$ python2 ./fasta2genotype.py ./batch_7.fa ./migrate_loci_list.txt ./migrate_stacksIDs_finalgenepop.txt NA ./pcod-korea-migrate-input
+Output type? [1] Migrate [2] Arlequin [3] DIYABC [4] LFMM [5] G-Phocs [6] Haplotype: 1
+Loci to use? [1] Variable [2] All: 2
+Filter for allele frequency? False alleles might bias data. [1] Yes [2] No: 2
+Remove monomorphic loci? [1] Yes [2] No: 2
+Filter for missing genotypes? These might bias data. [1] Yes [2] No: 2
+Clip cut sites? These may bias data. [1] Yes [2] No: 2
+Cataloging populations...
+Cataloging loci...
+
+```
+
+I'm not sure if I used the same answers that Mary would have, but it appears to be running now. 
