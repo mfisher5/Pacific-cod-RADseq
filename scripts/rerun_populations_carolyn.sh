@@ -13,9 +13,9 @@
 
 ## ENVIRONMENT SETUP
 
-DATADIR=/gscratch/merlab/mfisher5/stacks
+DATADIR=/gscratch/merlab/mfisher/stacks_b8_wgenome
 
 
 ## CODE FOR JOB
 
-populations -b 7 -P stacks_b8_rerun -M PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf
+populations -b 7 -P stacks_b8_2021rerun -M PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf

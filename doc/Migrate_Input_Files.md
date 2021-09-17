@@ -187,7 +187,7 @@ python2 migrate/fasta2genotype.py migrate/batch_7.fa migratemigrate_loci_list.tx
 <br>
 
 
-## 5 `Rerun Populations` (for real)
+## 5 Rerun `Populations` (for real)
 
 The `fasta2genotype.py` script does not seem to be working, so I am going to re-run Stacks' `populations` on Hyak and produce a VCF file. Then I'll replicate the filtering (for individuals, loci) that I did after the original `populations` run. This is based on MerLab's [How to use Slurm](https://github.com/merlab-uw/Klone/blob/main/HowToUseSlurm.md) documentation. 
 
@@ -205,8 +205,29 @@ The full code for re-running populations on Hyak:
 # navigate to home directory
 cd /gscratch/merlab/mfisher5   
 
-# upload population map
-rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks
+# create stacks subfolder
+mkdir stacks_b8_wgenome
+
+# copy over stacks intermediate files
+cp -a /gscratch/merlab/mfisher/stacks_b8_wgenome/. /gscratch/merlab/mfisher5/stacks_b8_wgenome
+
+# upload population map (note - started Hyak while in 'Documents/Pacific-cod-RADseq' directory)
+rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks_b8_wgenome
+# error: rsync: change_dir "/Documents/Pacific-cod-RADseq/data/stacks" failed: No such file or directory (2)
+
+rsync --verbose --archive --progress ~/Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks_b8_wgenome
+# error: rsync: change_dir "/mmfs1/home/mfisher5/Documents/Pacific-cod-RADseq/data/stacks" failed: No such file or directory (2)
+
+rsync --verbose --archive --progress ./data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks_b8_wgenome
+# error: rsync: change_dir "/mmfs1/gscratch/merlab/mfisher5//./data/stacks" failed: No such file or directory (2)
+
+
+rsync --verbose --archive --progress /data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks_b8_wgenome
+# error: rsync: change_dir "/data/stacks" failed: No such file or directory (2)
+
+rsync --verbose --archive --progress /c/Users/mcf05/Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks_b8_wgenome
+# error: rsync: change_dir "/c/Users/mcf05/Documents/Pacific-cod-RADseq/data/stacks" failed: No such file or directory (2)
+
 
 # upload populations batch file
 rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5
@@ -223,10 +244,10 @@ If I can't get this to work, I think Carolyn may have to run it out of the 'mfis
 cd /gscratch/merlab/mfisher   
 
 # upload population map 
-rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/stacks
+rsync --verbose --archive --progress /Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/stacks_b8_wgenome
 
 # upload populations batch file 
-rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
+rsync --verbose --archive --progress /Pacific-cod-RADseq/data/scripts/rerun_populations_carolyn.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
 
 
 # rerun populations (assumes 'stacks' subdirectory contains stacks intermediate files)
