@@ -196,7 +196,7 @@ Returning a VCF file from `populations` requires a minor change to my original i
 populations -b 7 -P stacks_b8_wgenome -M scripts/PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf
 ```
 
-I think that to use `slurm` on Hyak, I need this code saved into a [.sh file](https://github.com/mfisher5/Pacific-cod-RADseq/blob/main/scripts/Migrate/rerun_populations.sh). 
+I think that to use `slurm` on Hyak, I need this code saved into a [.sh file](https://github.com/mfisher5/Pacific-cod-RADseq/blob/main/scripts/rerun_populations.sh). 
 
 
 The full code for re-running populations on Hyak:
@@ -237,7 +237,7 @@ sbatch rerun_populations.sh
 
 ```
 
-If I can't get this to work, I think Carolyn may have to run it out of the 'mfisher' directory. I'm assuming that there is a subdirectory called 'stacks' within the 'mfisher' home directory, which contains all of the intermediate stacks files. 
+If I can't get this to work, I think Carolyn may have to run it out of the 'mfisher' directory (adjusted .sh file [here](https://github.com/mfisher5/Pacific-cod-RADseq/blob/main/scripts/rerun_populations_carolyn.sh) ).
 
 ```
 # navigate to home directory
