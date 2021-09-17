@@ -9,7 +9,7 @@ Prepare Migrate input files using Stacks output.
 
 (1) Access the MERlab Hyak node, (2) download Stacks v1.44, and (3) re-run `populations` to produce a RAD loci FASTA file. 
 
-Resources: [Nam Pho's Tutorial](https://github.com/merlab-uw/Klone/blob/main/Using_Hyak_tutorial_by_Nam_Pho.md)
+Resources: [Nam Pho's Tutorial](https://github.com/merlab-uw/Klone/blob/main/HowToUseKlone.md)
 
 <br>
 <br>
@@ -180,4 +180,55 @@ Then I *should* be able to run the following code from within my `mfisher5` fold
 python2 migrate/fasta2genotype.py migrate/batch_7.fa migratemigrate_loci_list.txt migrate/migrate_stacksIDs_finalgenepop NA migrate/pcod-korea-migrate-input
 ```
 
+
+
+## 5 Rerun Populations`
+
+The `fasta2genotype.py` script does not seem to be working, so I am going to re-run Stacks' `populations` on Hyak and produce a VCF file. Then I'll replicate the filtering (for individuals, loci) that I did after the original `populations` run. 
+
+Returning a VCF file from `populations` requires a minor change to my original input code: 
+```
+populations -b 7 -P stacks_b8_wgenome -M scripts/PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf
+```
+
+I think that to use `slurm` on Hyak, I want this code saved into a .sh file. 
+
+
+The full code for re-running populations on Hyak:
+
+```
+# navigate to home directory
+cd /gscratch/merlab/mfisher5   
+
+# upload population map
+rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5/stacks
+
+# upload populations batch file
+rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5
+
+# run population (assumes 'stacks' subdirectory contains stacks intermediate files)
+sbatch rerun_populations.sh
+
+```
+
+If I can't get this to work, I think Carolyn may have to run it out of the 'mfisher' directory. I'm assuming that there is a subdirectory called 'stacks' within the 'mfisher' home directory, which contains all of the intermediate stacks files. This is based on MerLab's [How to use Slurm](https://github.com/merlab-uw/Klone/blob/main/HowToUseSlurm.md) documentation. 
+
+```
+# navigate to home directory
+cd /gscratch/merlab/mfisher   
+
+# upload population map 
+rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/stacks
+
+# upload populations batch file 
+rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
+
+
+# run population (assumes 'stacks' subdirectory contains stacks intermediate files)
+sbatch rerun_populations.sh
+
+# see information about the job and the job id
+squeue --account merlab
+
+```
 
