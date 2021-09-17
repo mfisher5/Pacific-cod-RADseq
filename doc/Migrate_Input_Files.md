@@ -180,18 +180,23 @@ Then I *should* be able to run the following code from within my `mfisher5` fold
 python2 migrate/fasta2genotype.py migrate/batch_7.fa migratemigrate_loci_list.txt migrate/migrate_stacksIDs_finalgenepop NA migrate/pcod-korea-migrate-input
 ```
 
+----
+
+(take 2)
+
+<br>
 
 
-## 5 Rerun Populations`
+## 5 `Rerun Populations` (for real)
 
-The `fasta2genotype.py` script does not seem to be working, so I am going to re-run Stacks' `populations` on Hyak and produce a VCF file. Then I'll replicate the filtering (for individuals, loci) that I did after the original `populations` run. 
+The `fasta2genotype.py` script does not seem to be working, so I am going to re-run Stacks' `populations` on Hyak and produce a VCF file. Then I'll replicate the filtering (for individuals, loci) that I did after the original `populations` run. This is based on MerLab's [How to use Slurm](https://github.com/merlab-uw/Klone/blob/main/HowToUseSlurm.md) documentation. 
 
 Returning a VCF file from `populations` requires a minor change to my original input code: 
 ```
 populations -b 7 -P stacks_b8_wgenome -M scripts/PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf
 ```
 
-I think that to use `slurm` on Hyak, I want this code saved into a .sh file. 
+I think that to use `slurm` on Hyak, I need this code saved into a [.sh file](https://github.com/mfisher5/Pacific-cod-RADseq/blob/main/scripts/Migrate/rerun_populations.sh). 
 
 
 The full code for re-running populations on Hyak:
@@ -206,12 +211,12 @@ rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/P
 # upload populations batch file
 rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh mfisher5@klone.hyak.uw.edu:/gscratch/merlab/mfisher5
 
-# run population (assumes 'stacks' subdirectory contains stacks intermediate files)
+# rerun populations (assumes 'stacks' subdirectory contains stacks intermediate files)
 sbatch rerun_populations.sh
 
 ```
 
-If I can't get this to work, I think Carolyn may have to run it out of the 'mfisher' directory. I'm assuming that there is a subdirectory called 'stacks' within the 'mfisher' home directory, which contains all of the intermediate stacks files. This is based on MerLab's [How to use Slurm](https://github.com/merlab-uw/Klone/blob/main/HowToUseSlurm.md) documentation. 
+If I can't get this to work, I think Carolyn may have to run it out of the 'mfisher' directory. I'm assuming that there is a subdirectory called 'stacks' within the 'mfisher' home directory, which contains all of the intermediate stacks files. 
 
 ```
 # navigate to home directory
@@ -224,7 +229,7 @@ rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/stacks/P
 rsync --verbose --archive --progress /Documents/Pacific-cod-RADseq/data/scripts/rerun_populations.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
 
 
-# run population (assumes 'stacks' subdirectory contains stacks intermediate files)
+# rerun populations (assumes 'stacks' subdirectory contains stacks intermediate files)
 sbatch rerun_populations.sh
 
 # see information about the job and the job id
