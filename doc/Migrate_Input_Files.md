@@ -258,3 +258,84 @@ squeue --account merlab
 
 ```
 
+Upload the files in the google drive file https://drive.google.com/drive/u/1/folders/1Zb8KX8gltel7AFHN29JHza8S6l68YI5w to the folder that Carolyn made on Klone for the data
+
+```
+ rsync --archive --verbose --progress /mnt/c/Users/Carolyn/Desktop/MaryFiles/* ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/data/
+ ```
+ 
+Test bash script for running make_migrate_input.sh 
+```
+[ctarpey@klone1 data]$ cat make_migrate_inputs.sh
+#!/bin/bash
+#SBATCH --job-name=mfisher_test
+#SBATCH --account=merlab
+#SBATCH --partition=compute-hugemem
+#SBATCH --nodes=1
+## Walltime (days-hours:minutes:seconds format)
+#SBATCH --time=3-12:00:00
+## Memory per node
+#SBATCH --mem=200G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ctarpey@uw.edu
+
+
+## ENVIRONMENT SETUP
+
+DATADIR=/gscratch/merlab/mfisher/data
+
+
+## CODE FOR JOB
+
+python2 $DATADIR/fasta2genotype.py $DATADIR/batch_7.fa $DATADIR/migrate_loci_list.txt $DATADIR/migrate_stacksIDs_finalgenepop.txt NA $DATADIR/pcod-korea-migrate-input
+```
+
+It is failing with this weird error 
+
+```
+[ctarpey@klone1 data]$ cat slurm-895820.out
+Output type? [1] Migrate [2] Arlequin [3] DIYABC [4] LFMM [5] G-Phocs [6] Haplotype: Traceback (most recent call last):
+  File "/gscratch/merlab/mfisher/data/fasta2genotype.py", line 267, in <module>
+    choice = int(raw_input("Output type? [1] Migrate [2] Arlequin [3] DIYABC [4] LFMM [5] G-Phocs [6] Haplotype: "))
+EOFError: EOF when reading a line
+```
+
+I used the command od -c fasta2genotype.py to see if the file has dos EOL, but it doesn't, as far as I can tell. 
+
+``` 
+ctarpey@klone1 data]$ od -c fasta2genotype.py
+0000000   #   !   /   u   s   r   /   b   i   n   /   e   n   v       p
+0000020   y   t   h   o   n  \n   #  \n   #       (   c   )       P   a
+0000040   u   l       M   a   i   e   r  \n   #       A   p   r   i   l
+0000060       2   2   ,       2   0   1   6  \n   #       f   a   s   t
+0000100   a   2   g   e   n   o   t   y   p   e   .   p   y  \n   #
+0000120   V       1   .   8  \n   #       W   r   i   t   t   e   n
+0000140   f   o   r       P   y   t   h   o   n       2   .   7   .   5
+0000160  \n   #  \n   #       T   h   i   s       p   r   o   g   r   a
+0000200   m       t   a   k   e   s       a       f   a   s   t   a
+0000220   f   i   l   e       l   i   s   t   i   n   g       a   l   l
+0000240       a   l   l   e   l   e   s       o   f       a   l   l
+0000260   i   n   d   i   v   i   d   u   a   l   s       a   t       a
+0000300   l   l       l   o   c   i  \n   #       a   s       w   e   l
+0000320   l       a   s       a       l   i   s   t       o   f       i
+0000340   n   d   i   v   i   d   u   a   l   s   /   p   o   p   u   l
+0000360   a   t   i   o   n   s       a   n   d       l   i   s   t
+0000400   o   f       v   a   r   i   a   b   l   e       l   o   c   i
+```
+
+I downloaded all the files from Hyak on to my desktop to see what this python script is and how its working. I have python2 installed on one of my Ubuntu terminals, so I tried the command Mary wrote to run the fasta2genotype.py script. It's an interactive python script that requires inputs that are not on the command line which explains why it was failing on Klone. 
+
+```
+(base) ctarpey@DESKTOP-CG1JP0S:/mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate$ python2 ./fasta2genotype.py ./batch_7.fa ./migrate_loci_list.txt ./migrate_stacksIDs_finalgenepop.txt NA ./pcod-korea-migrate-input
+Output type? [1] Migrate [2] Arlequin [3] DIYABC [4] LFMM [5] G-Phocs [6] Haplotype: 1
+Loci to use? [1] Variable [2] All: 2
+Filter for allele frequency? False alleles might bias data. [1] Yes [2] No: 2
+Remove monomorphic loci? [1] Yes [2] No: 2
+Filter for missing genotypes? These might bias data. [1] Yes [2] No: 2
+Clip cut sites? These may bias data. [1] Yes [2] No: 2
+Cataloging populations...
+Cataloging loci...
+
+```
+
+I'm not sure if I used the same answers that Mary would have, but it appears to be running now. 
