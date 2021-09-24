@@ -257,4 +257,169 @@ sbatch rerun_populations.sh
 squeue --account merlab
 
 ```
+## Running Stacks on Hyak for a VCF output
 
+Mary wrote the code that we needed to run Stacks on Hyak. I used it as the starting point for getting Stacks to run on Hyak with the input files that we have. 
+
+rsync to move the code up to Hyak, as well as the PopMap_L1-5.txt, the last part of the input files we needed. 
+```
+ctarpey@DESKTOP-CG1JP0S:~$ rsync --verbose --archive --progress /mnt/d/PacificCodWGS/Mary_PcodAnnotations/stacks/rerun_populations_carolyn.sh  ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/
+
+ctarpey@DESKTOP-CG1JP0S:~$ rsync --verbose --archive --progress /mnt/d/PacificCodWGS/Mary_PcodAnnotations/stacks/PopMap_L1-5.txt ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/stacks_b8_wgenome/
+```
+
+This is the shell script to sbatch file that I used to run Stacks on Hyak rerun_populations_carolyn.sh
+```
+#!/bin/bash
+#SBATCH --job-name=mcf_stacks
+#SBATCH --account=merlab
+#SBATCH --partition=compute-hugemem
+#SBATCH --nodes=1
+## Walltime (days-hours:minutes:seconds format)
+#SBATCH --time=3-12:00:00
+## Memory per node
+#SBATCH --mem=100G
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=ctarpey@uw.edu
+
+## CODE FOR JOB
+
+/gscratch/merlab/mfisher5/stacks-1.48/populations -b 7 -P /gscratch/merlab/mfisher/stacks_b8_wgenome -M /gscratch/merlab/mfisher/stacks_b8_wgenome/PopMap_L1-5.txt -t 36 -r 0.80 -p 4 -m 10 --write_random_snp --genepop --fasta --vcf
+```
+
+Command I used to start the job, and the job batch number
+```
+(base) [ctarpey@klone1 mfisher]$ sbatch -A merlab rerun_populations_carolyn.sh
+Submitted batch job 929388
+```
+
+Its running! 
+```
+(base) [ctarpey@klone1 mfisher]$ squeue -A merlab
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+            929383 compute-h herring_ elpetrou  R       2:52      1 n3302
+            929388 compute-h mcf_stac  ctarpey  R       0:13      1 n3017
+            928369 compute-h pollock_ elpetrou  R    1:49:42      1 n3017
+```
+
+I took a look at the slurm output file, which has what would have been printed to the terminal if this were run in a typical terminal on a desktop. It appears to be running with no errors. 
+```
+(base) [ctarpey@klone1 mfisher]$ cat slurm-929388.out
+populations parameters selected:
+  Fst kernel smoothing: off
+  Bootstrap resampling: off
+  Percent samples limit per population: 0.8
+  Locus Population limit: 4
+  Minimum stack depth: 10
+  Log liklihood filtering: off; threshold: 0
+  Minor allele frequency cutoff: 0
+  Maximum observed heterozygosity cutoff: 1
+  Applying Fst correction: none.
+
+Parsing population map...
+The population map contained 326 samples, 9 population(s), 1 group(s).
+Reading the catalog...
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.catalog.tags.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.catalog.snps.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.catalog.alleles.tsv
+Reading matches to the catalog...
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_02.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_02_rep.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_04.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_06.1.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_07.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_07_rep.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_08.1.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_10.1.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_11.1.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_12.matches.tsv
+  Parsing /gscratch/merlab/mfisher/stacks_b8_wgenome/PO010715_17.1.matches.tsv
+{........}
+Regenerating nucleotide-level summary statistics for population 'Jukbyeon07'
+Population 'Jukbyeon07' contained 0 incompatible loci -- more than two alleles present.
+Regenerating nucleotide-level summary statistics for population 'JinhaeBay07'
+Population 'JinhaeBay07' contained 0 incompatible loci -- more than two alleles present.
+Regenerating nucleotide-level summary statistics for population 'JinhaeBay08'
+Population 'JinhaeBay08' contained 0 incompatible loci -- more than two alleles present.
+Regenerating nucleotide-level summary statistics for population 'Boryeong07'
+Population 'Boryeong07' contained 0 incompatible loci -- more than two alleles present.
+Regenerating nucleotide-level summary statistics for population 'Geoje14'
+Population 'Geoje14' contained 0 incompatible loci -- more than two alleles present.
+Re-tallying loci across populations...done.
+Generating haplotype-level summary statistics for population 'Pohang15'
+Generating haplotype-level summary statistics for population 'Geoje15'
+Generating haplotype-level summary statistics for population 'Namhae15'
+Generating haplotype-level summary statistics for population 'YellowSea16'
+Generating haplotype-level summary statistics for population 'Jukbyeon07'
+Generating haplotype-level summary statistics for population 'JinhaeBay07'
+Generating haplotype-level summary statistics for population 'JinhaeBay08'
+Generating haplotype-level summary statistics for population 'Boryeong07'
+Generating haplotype-level summary statistics for population 'Geoje14'
+Writing 22807 loci to summary statistics file, '/gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.sumstats.tsv'
+Writing 22807 loci to observed haplotype file, '/gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.haplotypes.tsv'
+Writing sample alleles (raw) to FASTA file '/gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.samples-raw.fa'
+Writing population data to GenePop file '/gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.genepop'
+Writing population data to VCF file '/gscratch/merlab/mfisher/stacks_b8_wgenome/batch_7.vcf'
+Populations is done.
+```
+
+It did output a VCF file that looks totally normal. 
+
+## Filtering the VCF file from Stacks 
+
+With the new VCF file from Stacks, we have to filter it to retain only the loci and individuals that we are interested in using in the Migrate analysis. I also have to rename the remaining individuals so that their names are 9 characters or less, a requirement of Migrate. 
+
+The list of loci that we want to use is located in one of the very first files that Mary shared with me. Its called migrate_loci_list.txt. The individuals that we want to keep is with that file and is called migrate_stacksIDs_finalgenepop.txt. 
+
+I'll use those files to filter the VCF with VCFtools. 
+```
+ctarpey@DESKTOP-CG1JP0S:~$ vcftools
+
+VCFtools (0.1.16)
+© Adam Auton and Anthony Marcketta 2009
+```
+
+From the manual, these are the command options I am interested in: 
+
+```
+vcftools [ --vcf FILE | --gzvcf FILE | --bcf FILE] [ --out OUTPUT PREFIX ] [ FILTERING OPTIONS ] [ OUTPUT OPTIONS ]
+
+--keep <filename>
+--remove <filename>
+
+Provide files containing a list of individuals to either include or exclude in subsequent analysis. Each individual ID (as defined in the VCF headerline) should be included on a separate line. If both options are used, then the "--keep" option is executed before the "--remove" option. When multiple files are provided, the union of individuals from all keep files subtracted by the union of individuals from all remove files are kept. No header line is expected.
+
+--snps <filename>
+--exclude <filename>
+
+Include or exclude a list of SNPs given in a file. The file should contain a list of SNP IDs (e.g. dbSNP rsIDs), with one ID per line. No header line is expected.
+
+```
+
+From that I gather this is the command I want to run to retain only the individuals in the migrate_stacksIDs_finalgenepop.txt and the loci in the migrate_loci_list.txt. 
+
+```
+vcftools  --vcf /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/Stacks_onHyak_forVCF/batch_7.vcf --out batch_7_filteredInds_loci --keep /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/migrate_stacksIDs_finalgenepop.txt --snps /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/migrate_loci_list.txt 
+```
+
+That didn't work 
+```
+Parameters as interpreted:
+        --vcf /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/Stacks_onHyak_forVCF/batch_7.vcf
+        --keep /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/migrate_stacksIDs_finalgenepop.txt
+        --out batch_7_filteredInds_loci
+        --snps /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/migrate_loci_list.txt
+
+Keeping individuals in 'keep' list
+After filtering, kept 0 out of 326 Individuals
+After filtering, kept 0 out of a possible 21128 Sites
+No data left for analysis!
+Run Time = 1.00 seconds
+```
+
+I needed to make some changes to the migrate_stacksIDs_finalgenepop.txt file, it had three columns and a header. I removed the header and retained only the column with the name of the sample. I saved the new file as migrate_stacksIDs_finalgenepop_namesOnly.txt
+
+```
+vcftools  --vcf /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/Stacks_onHyak_forVCF/batch_7.vcf --out batch_7_filteredInds_loci --keep /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/
+migrate_stacksIDs_finalgenepop_namesOnly.txt --snps /mnt/d/PacificCodWGS/Mary_PcodAnnotations/Migrate/FilterVCF/migrate_loci_list.txt
+```
