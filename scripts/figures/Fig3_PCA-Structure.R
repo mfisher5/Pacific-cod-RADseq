@@ -26,7 +26,7 @@ my_data_all <- read.genepop(here::here('data','genepop','korea-pcod-final-filter
 X <- scaleGen(my_data_all, NA.method="mean")
 
 ## structure classifications
-sdata <- read.delim(here::here('results','structure_k3_results.txt'))
+sdata <- read.delim(here::here('results','structure_k3_assignment-figure.txt'))
 
 
 

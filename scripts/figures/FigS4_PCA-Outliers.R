@@ -33,25 +33,25 @@ length(dat_outliers@all.names)
 dat_bayenv <- my_data_all[,loc=as.character(bayenv$LocusName)]
 length(dat_bayenv@all.names)
 
-# To replace missing data information with the mean
+## To replace missing data information with the mean
 X_outliers <- scaleGen(dat_outliers, NA.method="mean")
 X_bayenv   <- scaleGen(dat_bayenv, NA.method="mean")
 
 # Run PCA -----------------------------------------------------------------
-# To conduct the PCA. IF YOU DO NOT KNOW HOW MANY AXES TO RETAIN
+## To conduct the PCA. IF YOU DO NOT KNOW HOW MANY AXES TO RETAIN
 # pca_outliers <- dudi.pca(X,cent=FALSE,scale=FALSE)
 # barplot(pca_outliers$eig[1:50],main="PCA eigenvalues", col=heat.colors(50))
-pca_bayenv <- dudi.pca(X_bayenv,cent=FALSE,scale=FALSE)
-barplot(pca_bayenv$eig[1:50],main="PCA eigenvalues", col=heat.colors(50))
+# pca_bayenv <- dudi.pca(X_bayenv,cent=FALSE,scale=FALSE)
+# barplot(pca_bayenv$eig[1:50],main="PCA eigenvalues", col=heat.colors(50))
 
 
-# To conduct the PCA. IF YOU KNOW HOW MANY AXES TO RETAIN
+## To conduct the PCA. IF YOU KNOW HOW MANY AXES TO RETAIN
 pca_outliers <- dudi.pca(X_outliers,cent=FALSE,scale=FALSE,scannf=FALSE,nf=2) #nf = number to retain
 pca_bayenv   <- dudi.pca(X_bayenv,cent=FALSE,scale=FALSE,scannf=FALSE,nf=2) #nf = number to retain
 
 
 # Run DAPC ----------------------------------------------------------------
-# Subset for only southern populations
+## Subset for only southern populations
 dat_south <- dat_outliers[which(dat_outliers$pop %in% c("PO010715_07", "GE011215_11", "NA021015_30","JB121807_29","JB021108_23","GEO020414_30_2")),]
 popNames(dat_south)
 popNames(dat_outliers)
@@ -61,16 +61,33 @@ popNames(dat_south_bayenv)
 
 
 ## find optimal number of principal components
-outliers_dapc <- dapc(dat_south,dat_south$pop,n.pca=234,n.da=6) ##Retain all pca / da 
-test_a_score <- optim.a.score(outliers_dapc) ##Use graph to identify optimal number of PCs
+# outliers_dapc <- dapc(dat_south,dat_south$pop,n.pca=234,n.da=6) ##Retain all pca / da 
+# test_a_score <- optim.a.score(outliers_dapc) ##Use graph to identify optimal number of PCs
 
-bayenv_dapc <- dapc(dat_south_bayenv,dat_south_bayenv$pop,n.pca=234,n.da=6) ##Retain all pca / da 
-test_a_score <- optim.a.score(bayenv_dapc) ##Use graph to identify optimal number of PCs
+# bayenv_dapc <- dapc(dat_south_bayenv,dat_south_bayenv$pop,n.pca=234,n.da=6) ##Retain all pca / da 
+# test_a_score <- optim.a.score(bayenv_dapc) ##Use graph to identify optimal number of PCs
 
 
 ## run dapc only on optimal number of principal components
 outliers_dapc <- dapc(dat_south,dat_south$pop,n.pca=24,n.da=6) ##42 PCs is the optimal number here
 bayenv_dapc <- dapc(dat_south_bayenv,dat_south_bayenv$pop,n.pca=40,n.da=6) ##Retain all pca / da 
+
+
+
+# Highlight dispersers ----------------------------------------------------
+## sample IDs of the dispersers
+disperser_data <- read.genepop(here::here('data','genepop','korea-pcod-final-filtered-migrants-only.gen'))
+
+## coordinates for each individual in the bayenv / all outliers pca; 
+##      mark as '1' if one of the ten dispersers, '2' if second-generation migrant only ID'd by BayesAss
+individuals <- pca_outliers$li %>%
+        mutate(sample_ids=rownames(pca_outliers$li)) %>%
+        mutate(migrant = ifelse((sample_ids %in% as.character(rownames(disperser_data$tab))) & (sample_ids != "JUK07_34"), 1,ifelse(sample_ids=="JUK07_34",2,0))) %>%
+        filter(migrant > 0)
+individualsB <- pca_bayenv$li %>%
+        mutate(sample_ids=rownames(pca_bayenv$li)) %>%
+        mutate(migrant = ifelse((sample_ids %in% as.character(rownames(disperser_data$tab))) & (sample_ids != "JUK07_34"), 1,ifelse(sample_ids=="JUK07_34",2,0))) %>%
+        filter(migrant > 0)
 
 
 
@@ -89,18 +106,19 @@ points_leg.pca <- c(17,17,16,16,16,16,16, 16,15)
 pop_labels <- c("Pohang", "Geoje 2013", "Namhae", "Jinhaeman Dec.", "Jinhaeman Feb.", "Geoje 2014")
 pop_cols <- c("gray45","mediumorchid4","seagreen1","deepskyblue", "deepskyblue4", "mediumorchid2")
 
-png(here::here('results','FigureS.png'), res=100,height=600,width=900)
+png(here::here('results','FigureS4.png'), res=100,height=600,width=900)
 par(mfrow=c(1,1))
 layout(matrix(c(1,1, 5, 2,2,
                 3,3, 5, 4,4), nrow=2, byrow=TRUE))
-s.class(pca_outliers$li, fac=pop(my_data_outliers), 
+s.class(pca_outliers$li, fac=pop(dat_outliers), 
         col=alpha(col.pca,0.7), #color of points. will retain lines between points
         clabel=0, #remove population labels
         cellipse=0, #remove ellipses; to add back in, make >=1
         cpoint=2,
         grid=FALSE, #otherwise will have light gray grid markers
-        pch=c(16,16,16,17,15,16,16, 17,16)[as.numeric(pop(my_data_outliers))], #change point shapes
+        pch=c(16,16,16,17,15,16,16, 17,16)[as.numeric(pop(dat_outliers))], #change point shapes
         axesell=FALSE)
+points(x=individuals$Axis1[8], y=individuals$Axis2[8], pch=0, col='black', cex=3)
 mtext(text="a)", at=c(-9), cex=1.5)
 
 scatter.dapc(outliers_dapc,scree.da=FALSE, lty=1, lwd=2,posi.da="bottomright", scree.pca = FALSE,cellipse=0,leg=FALSE,label=NULL, pch = 19,csub=2,col=pop_cols,cex=1.5,clabel=1,solid=0.7, inset.solid=0.7)
@@ -114,6 +132,7 @@ s.class(pca_bayenv$li, fac=pop(dat_bayenv),
         grid=FALSE, #otherwise will have light gray grid markers
         pch=c(16,16,16,17,15,16,16, 17,16)[as.numeric(pop(dat_bayenv))], #change point shapes
         axesell=FALSE)
+points(x=individualsB$Axis1[8], y=individualsB$Axis2[8], pch=0, col='black', cex=3)
 mtext(text="c)", at=c(-12.3), cex=1.5)
 
 scatter.dapc(bayenv_dapc,scree.da=FALSE, lty=1, lwd=2,posi.da="bottomright", scree.pca = FALSE,cellipse=0,leg=FALSE,label=NULL, pch = 19,csub=2,col=pop_cols,cex=1.5,clabel=1,solid=0.7, inset.solid=0.7)
