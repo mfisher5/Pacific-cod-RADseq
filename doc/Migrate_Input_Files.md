@@ -247,7 +247,7 @@ cd /gscratch/merlab/mfisher
 rsync --verbose --archive --progress /Pacific-cod-RADseq/data/stacks/PopMap_L1-5.txt ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher/stacks_b8_wgenome
 
 # upload populations batch file 
-rsync --verbose --archive --progress /Pacific-cod-RADseq/scripts/rerun_populations_carolyn.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
+rsync --verbose --archive --progress /Pacific-cod-RADseq/data/scripts/rerun_populations_carolyn.sh ctarpey@klone.hyak.uw.edu:/gscratch/merlab/mfisher
 
 
 # rerun populations (assumes 'stacks' subdirectory contains stacks intermediate files)
