@@ -1,0 +1,81 @@
+---
+title: "FigS Bio-Oracle Temperature Data"
+author: "Mary Fisher"
+date: "2/1/2021"
+output: html_document
+---
+
+
+# Description
+
+Pull environmental data from [Bio-Oracle database](http://www.bio-oracle.org/) to explore gene x environment associations.
+
+Originally written to extract environmental data for the US West Coast, edited in June 2020 to extract environmental data for the Korean peninsula (Yellow Sea, East Sea, Korea Strait).
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This script requires the following packages
+```{r}
+library(here)
+library(sdmpredictors)
+library(leaflet)
+library(tidyverse)
+library(raster)
+library(grid)
+library(gridExtra)
+```
+<br>
+
+# Download environmental layers 
+
+You can explore the environmental data "layers" using the following code. It should return over 300 different environmental measurements.
+```{r eval=FALSE, echo=TRUE}
+layers.bio2 <- list_layers( datasets="Bio-ORACLE" )
+
+## for temperature only
+layers.bio2 %>% 
+  filter(marine==TRUE & grepl('temperature',name)==TRUE) %>% 
+  dplyr::select(name, layer_code)
+```
+<br>
+
+Download the layer data for the metrics of interest: mean/max/range sea surface temperature, mean/min/max sea temperature at mean depth, mean/min/max sea temperature at min depth
+```{r eval=FALSE, echo=TRUE}
+environmental_vars <- load_layers( layercodes = c("BO_sstmean"), # salinity
+                                   equalarea=FALSE, 
+                                   rasterstack=TRUE)
+```
+<br>
+
+Save a nice image of the mean annual SST around the Korean peninsula
+```{r}
+e <- extent(115,155,25,50)
+plot(environmental_vars[[1]], col=hcl.colors(n=100, palette="viridis"),
+     xlab="", ylab="", ext=e)
+
+png('bio-oracle_sst_mean_zoom.png', height=400, width=400)
+plot(environmental_vars[[2]], col=hcl.colors(n=100, palette="viridis"),
+     xlab="", ylab="", ext=e)
+dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

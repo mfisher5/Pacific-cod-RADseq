@@ -1,0 +1,7 @@
+direction	from	to	mean	stdev
+eastward	west	south	0.0139	0.0051
+eastward	west	east	0.0382	0.0178
+eastward	south	east	0.0258	0.0155
+westward	east 	south	0.002	0.002
+westward	east	west	0.0068	0.0067
+westward	south	west	0.0068	0.0067
