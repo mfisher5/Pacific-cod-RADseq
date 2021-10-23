@@ -15,7 +15,7 @@ library(here)
 
 
 # Read Data & Prepare for Graphing ----------------------------------------
-regdata <- read.table(here::here('results',"assigner_ranked.no.imputation.results.summary.stats.tsv"), header=TRUE, sep="\t",stringsAsFactors=F)
+regdata <- read.table(here::here('results','individual-assignment',"assigner_ranked.no.imputation.results.summary.stats.tsv"), header=TRUE, sep="\t",stringsAsFactors=F)
 regdata$MARKER_NUMBER <- as.character(regdata$MARKER_NUMBER)
 
 # rename populations for plotting

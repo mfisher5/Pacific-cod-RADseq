@@ -55,15 +55,3 @@ writeGenPop(gi=mygen2_filtered, file.name=here::here('results','outliers','korea
 ## !! this function writes out the loci on one line, separated by ",". I manually edited the output in notepad++ and replaced ", " with "\r\n"
 
 
-library(genepop)
-
-
-
-Fst(inputFile=here::here('results','outliers','korea-pcod-final-filtered-outliers-removed-genepop.txt'),
-               pairs=TRUE,
-               outputFile=here::here('results','outliers','genepop-fst-outliers-removed'))
-
-
-Fst(inputFile=here::here('results','outliers','korea-pcod-final-filtered-migrants-removed-outliers-removed-genepop.txt'),
-    pairs=TRUE,
-    outputFile=here::here('results','outliers','genepop-fst-migrants-removed-outliers-removed'))
