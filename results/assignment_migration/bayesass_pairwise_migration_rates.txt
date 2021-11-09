@@ -1,7 +1,7 @@
-direction	from	to	n	mean	stdev	95CI_upper	95CI_lower
+direction	from	to	n	mean	stdev	CI95_upper	CI95_lower
 eastward	west	south	211	0.0139	0.0051	0.023896	0.003904
 eastward	west	east	78	0.0382	0.0178	0.073088	0.003312
 eastward	south	east	197	0.0258	0.0155	0.05618	-0.00458
-westward	east 	south	197	0.002	0.002	0.00592	-0.00192
+westward	east	south	197	0.002	0.002	0.00592	-0.00192
 westward	east	west	78	0.0068	0.0067	0.019932	-0.006332
 westward	south	west	211	0.0068	0.0067	0.019932	-0.006332

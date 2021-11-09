@@ -13,7 +13,7 @@ library(here)
 
 
 # Read in data ------------------------------------------------------------
-dat <- read.delim(here::here('results','bayesass_pairwise_migration_rates.txt'))
+dat <- read.delim(here::here('results','assignment_migration','bayesass_pairwise_migration_rates.txt'))
 
 ## format
 dat <- dat %>%
@@ -26,12 +26,13 @@ dat <- dat %>%
 # Plot --------------------------------------------------------------------
 png(here::here('results','FigureS8.png'), res=100, height=500,width=600)
 ggplot(dat, aes(x=populations,y=mean*100, col=direction, pch=direction)) +
-  geom_point(size=3) +
-  geom_errorbar(aes(ymin=(X95..lower)*100, ymax=(X95..upper)*100), size=1, width=0.10) +
+  geom_point(size=3, position = position_dodge(w = 0.05)) +
+  geom_errorbar(aes(ymin=(CI95_lower)*100, ymax=(CI95_upper)*100), size=0.5, width=0.20,
+                position = position_dodge(w = 0.05)) +
   xlab("Population Comparison") + ylab("Migration Rate (%)") +
   scale_color_manual(values=c("black","gray47")) +
   scale_shape_manual(values=c(17,16)) +
-  ylim(c(0,5)) +
+  ylim(c(-1,8)) +
   theme_bw() +
   theme(axis.title.x=element_text(size=13),
         axis.text.x=element_text(size=12),
