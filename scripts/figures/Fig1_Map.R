@@ -291,7 +291,12 @@ myplot2 <- myplot + geom_segment(aes(x=125,xend=128.4,y=31, yend=33.6), linetype
                col="orange4") +
   annotate("text", x = 125, y = 32, label = "TWC", fontface = "italic", size = 3, color="orange4")
 
-png(here::here('results','Figure1.png'), res=200, height=1800,width=1600)
+png(here::here('results','Figure1.png'), res=300, height=2200, width=2400)
 print(myplot2)
 dev.off()
 
+
+ggsave(filename=here::here('results','Figure1.pdf'), device="pdf", 
+       dpi=600, units="px", width=4800, height=4200)
+print(myplot2)
+dev.off()

@@ -122,13 +122,10 @@ ggcols <- gg_color_hue(2)
 ggcols <- c("grey0","grey50")
 mycols <- c("#5ab4ac","#f1a340")
 
-
-
 ## plot
-png(here::here('results','Figure2.png'), res=150, height=900,width=950)
-ggplot(plotdata, aes(x=TL.cm, y=BW.g)) +
-  geom_point(aes(col = Sex, pch = Migrant), size = 3) +
-  geom_point(data=filter(plotdata, Migrant == "Yes"), aes(x=TL.cm, y=BW.g), col = "grey40", pch = 2, size = 3) +
+fig2 <- ggplot(plotdata, aes(x=TL.cm, y=BW.g)) +
+  geom_point(aes(col = Sex, pch = Disperser), size = 3) +
+  geom_point(data=filter(plotdata, Disperser == "Yes"), aes(x=TL.cm, y=BW.g), col = "grey40", pch = 2, size = 3) +
   facet_wrap(~Site, nrow = 4, ncol = 2) +
   xlab("Total Length (cm)") +
   ylab("Body Weight (g)") +
@@ -148,7 +145,16 @@ ggplot(plotdata, aes(x=TL.cm, y=BW.g)) +
                                               legend.title=element_text(size=12),
                                               axis.title=element_text(size=12),
                                               strip.text=element_text(size=12))
+
+## plot
+png(here::here('results','Figure2.png'), res=150, height=900,width=950)
+fig2
 dev.off()
+
+
+
+ggsave(here::here('results','Figure2.pdf'), plot=fig2, device="pdf", dpi=600, height=3400,width=4500, units="px")
+
 
 
 

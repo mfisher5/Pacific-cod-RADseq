@@ -1,4 +1,4 @@
-Sample.ID	Migrant	Assigned.Pop
+Sample.ID	Disperser	Assigned.Pop
 PO010715_02	No	South
 PO010715_04	No	South
 PO010715_06	No	South

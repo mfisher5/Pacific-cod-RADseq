@@ -26,7 +26,7 @@ my_data_all <- read.genepop(here::here('data','genepop','korea-pcod-final-filter
 X <- scaleGen(my_data_all, NA.method="mean")
 
 ## structure classifications
-sdata <- read.delim(here::here('results','structure_k3_assignment-figure.txt'))
+sdata <- read.delim(here::here('results','pop-structure','structure_k3_assignment-figure.txt'))
 
 
 
@@ -109,9 +109,56 @@ mtext(text="a)", at=c(46,6), cex=1.5)
 
 # add composition plot with structure output
 par(fig=c(0.02,0.55,0.9,0.99),oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new=TRUE,xpd=TRUE)
-compoplot.matrix.edit(as.matrix(sdata_raw[,2:4]),col.pal=c("darkred","darkslategray2","forestgreen"),
+compoplot.matrix.edit(as.matrix(sdata[,2:4]),col.pal=c("darkred","darkslategray2","forestgreen"),
                       legend=FALSE,border=NA,space = c(0,0), ylim=c(0,1),yaxt='n',show.lab=FALSE)
 axis(2, at = seq(0, 1, 1), las = 1, line=-1)
+
+
+dev.off()
+
+
+
+
+#### PLOT high resolution ####
+png(file=here::here('results','Figure3-600dpi.png'), res=600, height=2250, width=2600)
+par(mfrow=c(1,1))
+layout(matrix(c(3, 3, 2,
+                3, 3, 2,
+                3, 3, 1,
+                3, 3, 1,
+                3, 3, 1), nrow=5, byrow=TRUE))
+# add dapc of southern groups only
+scatter.dapc(mydata_dapc,scree.da=FALSE, lty=1, lwd=2,posi.da="bottomright", scree.pca = FALSE,cellipse=0,leg=FALSE,label=NULL, pch = 19,csub=2,col=pop_cols,cex=1,clabel=1,solid=0.7, inset.solid=0.7)
+mtext(text="b)", side=3, line=2, at=4, cex=1)
+
+# add legend in its own area
+par(xpd=TRUE) #allow objects outside of the plot
+plot.new()
+legend(x=-0.75,y=3.2,legend = c("Block 161", "Boryeong", "Namhae", 
+                                "Geoje 2014", "Geoje 2013", "Jinhaeman Dec.", "Jinhaeman Feb.", "Pohang", "Jukbyeon"), 
+        col = col_leg.pca, border = FALSE, bty = "n", cex = 1.2, 
+        pt.cex=1.5, y.intersp = 1, title = NULL,pch=points_leg.pca)
+par(xpd=FALSE)
+
+
+#to graph PCA with lines between samples
+s.class(pca_all$li, fac=pop(my_data_all), 
+        col=alpha(col.pca,0.7), #color of points. will retain lines between points
+        clabel=0, #remove population labels
+        cellipse=0, #remove ellipses; to add back in, make >=1
+        cpoint=2.5,
+        grid=FALSE, #otherwise will have light gray grid markers
+        pch=c(16,16,16,17,15,16,16, 17,16)[as.numeric(pop(my_data_all))], #change point shapes
+        axesell=FALSE)
+#add.scatter.eig(pca_all$eig[1:50],posi="bottom", 3,2,1,ratio=.2)
+mtext(text="a)", line=2.2, adj=0.98, cex=1)
+
+
+# add composition plot with structure output
+par(fig=c(0.04,0.55,0.87,0.98),oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new=TRUE,xpd=TRUE)
+compoplot.matrix.edit(as.matrix(sdata[,2:4]),col.pal=c("darkred","darkslategray2","forestgreen"),
+                      legend=FALSE,border=NA,space = c(0,0), ylim=c(0,1),yaxt='n',show.lab=FALSE)
+axis(side = 2, at = seq(0, 1, 1), las = 1, line=-0.6, cex = 0.5)
 
 
 dev.off()
