@@ -1,0 +1,3 @@
+data/fastq_backup/*
+data/metadata/SRA_metadata.xlsx
+data/metadata/BioSample-individual.xlsx

@@ -120,7 +120,7 @@ dev.off()
 
 # save as high-res PDF
 fig4 <- ggplot(plotdat, aes(x=factor(Site_ID, levels=site_order), y=Ne1)) +
-  geom_point(aes(pch = Population, col=coast), size = 2)+
+  geom_point(aes(pch = Population, col=coast), size = 1.5)+
   geom_errorbar(aes(ymin=Ne1_lower, ymax = Ne1_upper), size = 0.3, width=0.5)+
   geom_segment(aes(x=9,xend=9,y=10007,yend=39188), size=0.3) +
   geom_segment(aes(x=9,xend=9,y=39188,yend=41000), size=0.3) +
@@ -130,11 +130,11 @@ fig4 <- ggplot(plotdat, aes(x=factor(Site_ID, levels=site_order), y=Ne1)) +
   scale_color_manual(values=c("firebrick4","deepskyblue","forestgreen",'black'), name="Coast - Korea") +
   scale_shape_manual(name="Region", values=c(16,17)) +
   geom_vline(xintercept=6.5) +
-  theme(axis.text.x=element_text(angle=90, hjust = 1, vjust=0.5, size = 10, color="black"),
+  theme(axis.text.x=element_text(angle=90, hjust = 1, vjust=0.5, size = 9, color="black"),
         axis.title.y=element_text(size=10),
         axis.text.y=element_text(size = 8),
         legend.key = element_blank(),
-        legend.key.size = unit(0.2, "cm"),
+        legend.key.size = unit(0.4, "cm"),
         legend.text = element_text(size=9, family="sans"),
         legend.title= element_text(size=9, family="sans"),
         panel.background = element_rect(fill="white",
